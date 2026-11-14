@@ -1,0 +1,34 @@
+# Secrets (never upload these)
+.env
+.env.*
+*.pem
+*.key
+
+# Python virtual environments
+venv/
+.venv/
+env/
+
+# Python cache and build files
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Generated files (bills, QR codes, uploads)
+generated_bills/
+qr_codes/
+uploads/
+
+# Local databases and logs
+*.sqlite3
+*.db
+*.log
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
