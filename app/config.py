@@ -7,7 +7,7 @@ load_dotenv()  # reads the .env file in the project root into the environment
 
 class Settings:
     DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", "postgresql://postgres:postgres123@localhost:5432/inventory_db"
+        "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/inventory_db"
     )
 
     SECRET_KEY: str = os.getenv("SECRET_KEY", "insecure_dev_secret_change_me")
