@@ -1,6 +1,7 @@
 # Secrets (never upload these)
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 
@@ -18,8 +19,8 @@ dist/
 .pytest_cache/
 
 # Generated files (bills, QR codes, uploads)
-generated_bills/
-qr_codes/
+app/static/bills/
+app/static/qrcodes/
 uploads/
 
 # Local databases and logs
