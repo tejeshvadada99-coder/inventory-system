@@ -1,9 +1,8 @@
-
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.database import get_db, SessionLocal
 from app.auth import require_employee
 from app.models import Product, Customer, Bill, Sale, User
 from app.schemas import ProductOut, CustomerOut, BillCreate, BillOut
@@ -25,9 +24,23 @@ def list_customers(db: Session = Depends(get_db)):
     return db.query(Customer).all()
 
 
+def _email_in_background(bill_id: int, to_email: str, customer_name: str, pdf_path: str):
+    """Runs after the response is sent, so a slow or blocked SMTP server can't freeze billing."""
+    sent = send_bill_email(to_email, customer_name, bill_id, pdf_path)
+    db = SessionLocal()
+    try:
+        b = db.query(Bill).filter(Bill.id == bill_id).first()
+        if b:
+            b.email_sent = sent
+            db.commit()
+    finally:
+        db.close()
+
+
 @router.post("/bills", response_model=BillOut)
 def create_bill(
     payload: BillCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_employee),
 ):
@@ -79,16 +92,17 @@ def create_bill(
     db.commit()
     db.refresh(bill)
 
-    # 4. Generate the QR code + PDF receipt.
+    # 4. Generate the QR code + PDF receipt, and save the QR path right away.
     qr_path = generate_bill_qr(bill.id, customer.name, bill.total_amount, settings.STORE_NAME)
     bill.qr_code_path = qr_path
     pdf_path = generate_bill_pdf(bill, settings.STORE_NAME, qr_path)
-
-    # 5. Email it to the customer automatically, if we have an address.
-    if customer.email:
-        sent = send_bill_email(customer.email, customer.name, bill.id, pdf_path)
-        bill.email_sent = sent
-
     db.commit()
     db.refresh(bill)
+
+    # 5. Email it in the background if we have an address.
+    if customer.email:
+        background_tasks.add_task(
+            _email_in_background, bill.id, customer.email, customer.name, pdf_path
+        )
+
     return bill
