@@ -32,6 +32,7 @@ class RoleEnum(str, enum.Enum):
 class VerificationType(str, enum.Enum):
     email = "email"
     mobile = "mobile"
+    password_reset = "password_reset"
 
 
 # ============================================================
