@@ -1,0 +1,648 @@
+
+<!-- app/templates/customer_login.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#101827">
+
+    <title>Customer Login | Retail Store</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at 10% 15%, rgba(59,130,246,.16), transparent 30%),
+                radial-gradient(circle at 90% 85%, rgba(139,92,246,.15), transparent 30%),
+                #0b1120;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: .95fr 1.05fr;
+            background: rgba(17,27,46,.95);
+            border: 1px solid rgba(148,163,184,.15);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 30px 90px rgba(0,0,0,.4);
+            animation: appear .6s ease;
+        }
+
+        @keyframes appear {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* LEFT PANEL */
+
+        .welcome-panel {
+            padding: 50px 40px;
+            background: linear-gradient(145deg, #2563eb, #5b21b6);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-panel::before,
+        .welcome-panel::after {
+            content: "";
+            position: absolute;
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 50%;
+        }
+
+        .welcome-panel::before {
+            width: 320px;
+            height: 320px;
+            right: -160px;
+            top: -100px;
+        }
+
+        .welcome-panel::after {
+            width: 220px;
+            height: 220px;
+            left: -120px;
+            bottom: -90px;
+        }
+
+        .brand {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 19px;
+            font-weight: 800;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: rgba(255,255,255,.18);
+            border: 1px solid rgba(255,255,255,.25);
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            font-size: 22px;
+        }
+
+        .welcome-content {
+            position: relative;
+            z-index: 1;
+            margin: 65px 0;
+        }
+
+        .welcome-content h1 {
+            font-size: clamp(30px, 4vw, 42px);
+            line-height: 1.2;
+            font-weight: 800;
+            margin-bottom: 18px;
+        }
+
+        .welcome-content p {
+            color: rgba(255,255,255,.82);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .features {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 18px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            color: rgba(255,255,255,.94);
+            font-size: 13px;
+        }
+
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            background: rgba(255,255,255,.16);
+            font-size: 16px;
+        }
+
+        /* LOGIN PANEL */
+
+        .form-panel {
+            padding: 55px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-heading {
+            margin-bottom: 34px;
+        }
+
+        .form-heading h2 {
+            font-size: 29px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .form-heading p {
+            color: #94a3b8;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .form-group {
+            margin-bottom: 21px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 9px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            height: 50px;
+            padding: 0 15px;
+            background: #0b1425;
+            border: 1px solid #29364b;
+            border-radius: 10px;
+            color: #f8fafc;
+            outline: none;
+            font-family: inherit;
+            font-size: 13px;
+            transition: .25s;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #64748b;
+        }
+
+        .input-wrapper input:focus {
+            border-color: #638cff;
+            box-shadow: 0 0 0 3px rgba(99,140,255,.12);
+        }
+
+        .password-input {
+            padding-right: 65px !important;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #93a4bd;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .toggle-password:hover {
+            color: #fff;
+        }
+
+        .form-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 5px 0 25px;
+            font-size: 11px;
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+        }
+
+        .remember input {
+            accent-color: #638cff;
+        }
+
+        .form-options a,
+        .register-link a {
+            color: #8eacff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .form-options a:hover,
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .login-btn {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(100deg, #3976ed, #7354e8);
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: .25s;
+            box-shadow: 0 8px 22px rgba(59,130,246,.2);
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(59,130,246,.3);
+        }
+
+        .login-btn:disabled {
+            opacity: .65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .register-link {
+            margin-top: 27px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .security-note {
+            margin-top: 27px;
+            padding: 13px;
+            border: 1px solid rgba(96,165,250,.2);
+            border-radius: 10px;
+            background: rgba(37,99,235,.08);
+            color: #9db9ec;
+            font-size: 11px;
+            line-height: 1.7;
+        }
+
+        .message {
+            display: none;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+            border-radius: 9px;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .message.error {
+            display: block;
+            color: #fca5a5;
+            background: rgba(220,38,38,.12);
+            border: 1px solid rgba(248,113,113,.2);
+        }
+
+        .message.success {
+            display: block;
+            color: #86efac;
+            background: rgba(22,163,74,.12);
+            border: 1px solid rgba(74,222,128,.2);
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #64748b;
+            font-size: 10px;
+        }
+
+        @media (max-width: 800px) {
+            .container {
+                max-width: 550px;
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-panel {
+                padding: 30px;
+            }
+
+            .welcome-content {
+                margin: 35px 0 25px;
+            }
+
+            .welcome-content h1 {
+                font-size: 30px;
+            }
+
+            .features {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+
+            .form-panel {
+                padding: 38px 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px 10px;
+                align-items: flex-start;
+            }
+
+            .container {
+                border-radius: 17px;
+            }
+
+            .welcome-panel {
+                padding: 25px 22px;
+            }
+
+            .welcome-content {
+                margin: 30px 0 20px;
+            }
+
+            .welcome-content h1 {
+                font-size: 27px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .form-panel {
+                padding: 32px 22px;
+            }
+
+            .form-heading h2 {
+                font-size: 25px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                transition-duration: .01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- WELCOME PANEL -->
+
+    <section class="welcome-panel">
+
+        <div class="brand">
+            <div class="brand-icon">✦</div>
+            <span>{{ store_name | default('RETAIL STORE') }}</span>
+        </div>
+
+        <div class="welcome-content">
+            <h1>Welcome back.</h1>
+
+            <p>
+                Sign in to access your customer account, check your
+                previous purchases and keep track of your loyalty rewards.
+            </p>
+        </div>
+
+        <div class="features">
+
+            <div class="feature">
+                <div class="feature-icon">★</div>
+                <span>Track your loyalty points.</span>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">▤</div>
+                <span>View your purchase history.</span>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">♧</div>
+                <span>Manage your customer profile.</span>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- LOGIN FORM -->
+
+    <section class="form-panel">
+
+        <div class="form-heading">
+            <h2>Customer login</h2>
+            <p>Enter your registered email or mobile number.</p>
+        </div>
+
+        <div id="formMessage" class="message" role="alert"></div>
+
+        <form id="loginForm">
+
+            <div class="form-group">
+                <label for="identifier">Email address or mobile number</label>
+
+                <div class="input-wrapper">
+                    <input
+                        type="text"
+                        id="identifier"
+                        name="identifier"
+                        placeholder="Enter email or mobile number"
+                        autocomplete="username"
+                        required
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+
+                <div class="input-wrapper">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="password-input"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="toggle-password"
+                        id="togglePassword"
+                    >
+                        Show
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-options">
+
+                <label class="remember">
+                    <input type="checkbox" id="remember">
+                    Remember me
+                </label>
+
+                <a href="/customer/forgot-password">
+                    Forgot password?
+                </a>
+
+            </div>
+
+            <button type="submit" class="login-btn" id="loginBtn">
+                Sign In →
+            </button>
+
+        </form>
+
+        <div class="register-link">
+            Don't have an account?
+            <a href="/customer/register">Create account</a>
+        </div>
+
+        <div class="security-note">
+            <strong>Secure customer access</strong><br>
+            Your account and purchase history are accessible only
+            after successful authentication.
+        </div>
+
+        <div class="footer">
+            © {{ current_year | default('2026') }}
+            {{ store_name | default('Retail Store') }}.
+            All rights reserved.
+        </div>
+
+    </section>
+
+</div>
+
+
+<script>
+    // Password visibility
+
+    const passwordInput = document.getElementById("password");
+    const togglePassword = document.getElementById("togglePassword");
+
+    togglePassword.addEventListener("click", function() {
+        const isPassword = passwordInput.type === "password";
+
+        passwordInput.type = isPassword ? "text" : "password";
+        togglePassword.textContent = isPassword ? "Hide" : "Show";
+    });
+
+
+    // Login form
+
+    const loginForm = document.getElementById("loginForm");
+    const messageBox = document.getElementById("formMessage");
+    const loginBtn = document.getElementById("loginBtn");
+
+    function showMessage(message, type) {
+        messageBox.textContent = message;
+        messageBox.className = "message " + type;
+    }
+
+    loginForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const identifier =
+            document.getElementById("identifier").value.trim();
+
+        const password =
+            document.getElementById("password").value;
+
+        if (!identifier || !password) {
+            showMessage("Please enter your login details.", "error");
+            return;
+        }
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Signing in...";
+
+        messageBox.className = "message";
+
+        try {
+            const response = await fetch("/auth/customer/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    identifier: identifier,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.detail || "Login failed. Please check your details."
+                );
+            }
+
+            // Store token for customer API requests.
+            // Do not store passwords in browser storage.
+
+            if (!data.access_token) {
+                throw new Error("The server did not return an access token.");
+            }
+
+            sessionStorage.setItem("customer_access_token", data.access_token);
+
+            showMessage("Login successful. Redirecting...", "success");
+
+            window.location.href = "/customer/dashboard";
+
+        } catch (error) {
+            showMessage(error.message, "error");
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = "Sign In →";
+        }
+    });
+</script>
+
+</body>
+</html>
