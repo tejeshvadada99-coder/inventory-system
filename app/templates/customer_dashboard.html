@@ -962,7 +962,7 @@
         notifications: "/customer/notifications"
     };
 
-    const token = sessionStorage.getItem("customer_access_token");
+    const token = localStorage.getItem("customer_access_token");
 
     // =====================================================
     // AUTHENTICATION
@@ -983,7 +983,8 @@
         });
 
         if (response.status === 401 || response.status === 403) {
-            sessionStorage.removeItem("customer_access_token");
+            localStorage.removeItem("customer_access_token");
+            localStorage.removeItem("customer_user");
             window.location.replace("/customer/login");
             throw new Error("Your session has expired. Please sign in again.");
         }
@@ -1063,46 +1064,75 @@
     // PROFILE
     // =====================================================
 
-    async function loadProfile() {
+    
+async function loadProfile() {
+    try {
+        const profile = await apiRequest(API.profile);
 
-        try {
-            const profile = await apiRequest(API.profile);
-
-            const name = getFirst(profile, ["name", "full_name"], "Customer");
-
-            setText("customerName", name);
-            setText("headerName", name);
-            setText("profileName", name);
-
-            const initial = String(name).trim().charAt(0).toUpperCase() || "C";
-            setText("headerAvatar", initial);
-
-            setText(
-                "profileMobile",
-                getFirst(profile, ["mobile_number", "mobile"])
-            );
-
-            setText("profileEmail", profile.email);
-
-            setText(
-                "emailVerified",
-                profile.email_verified ? "Verified" : "Not verified"
-            );
-
-            setText(
-                "mobileVerified",
-                profile.mobile_verified ? "Verified" : "Not verified"
-            );
-
-            setText(
-                "memberSince",
-                formatDate(profile.created_at)
-            );
-
-        } catch (error) {
-            console.error("Profile loading error:", error);
+        if (!profile) {
+            throw new Error("Customer profile not found");
         }
+
+        // Customer name
+        const name = getFirst(
+            profile,
+            ["name", "full_name"],
+            "Customer"
+        );
+
+        setText("customerName", name);
+        setText("headerName", name);
+        setText("profileName", name);
+
+        // Customer avatar
+        const initial = String(name).trim().charAt(0).toUpperCase() || "C";
+        setText("headerAvatar", initial);
+
+        // Contact details
+        setText(
+            "profileMobile",
+            getFirst(profile, ["mobile_number", "mobile"], "Not provided")
+        );
+
+        setText(
+            "profileEmail",
+            getFirst(profile, ["email"], "Not provided")
+        );
+
+        // Verification status (verification is optional)
+        setText(
+            "emailVerified",
+            profile.email_verified ? "Verified" : "Not required"
+        );
+
+        setText(
+            "mobileVerified",
+            profile.mobile_verified ? "Verified" : "Not required"
+        );
+
+        // Membership date
+        setText(
+            "memberSince",
+            profile.created_at
+                ? formatDate(profile.created_at)
+                : "Not available"
+        );
+
+    } catch (error) {
+        console.error("Profile loading error:", error);
+
+        if (error.status === 401) {
+            localStorage.removeItem("customer_access_token");
+            localStorage.removeItem("customer_user");
+            window.location.replace("/customer/login");
+            return;
+        }
+
+        setText("customerName", "Customer");
+        setText("headerName", "Customer");
+        setText("profileName", "Customer");
     }
+}
 
 
     // =====================================================
@@ -1118,7 +1148,9 @@
                 API.purchases + "?page=1&limit=5"
             );
 
-            const purchases = getItems(data);
+            const purchases = Array.isArray(data.purchases)
+                ? data.purchases
+                : [];
 
             setText(
                 "totalPurchases",
@@ -1148,10 +1180,10 @@
                 const details = document.createElement("div");
 
                 const title = document.createElement("h3");
-                title.textContent = `Receipt #${safeText(bill.id, "")}`;
+                title.textContent = `Receipt #${safeText(bill.bill_id, "")}`;
 
                 const date = document.createElement("p");
-                date.textContent = formatDate(bill.created_at);
+                date.textContent = formatDate(bill.data);
 
                 details.append(title, date);
                 info.append(icon, details);
@@ -1169,7 +1201,7 @@
 
                 const link = document.createElement("a");
                 link.className = "view-bill";
-                link.href = `/customer/bills/${encodeURIComponent(bill.id)}`;
+                link.href = `/customer/bills/${encodeURIComponent(bill.bill_id)}`;
                 link.textContent = "View bill";
 
                 right.append(amount, status, link);
@@ -1353,11 +1385,10 @@
     // =====================================================
 
     document.getElementById("logoutBtn").addEventListener("click", () => {
-
-        sessionStorage.removeItem("customer_access_token");
-
-        window.location.replace("/customer/login");
-    });
+    localStorage.removeItem("customer_access_token");
+    localStorage.removeItem("customer_user");
+    window.location.replace("/customer/login");
+});
 
 
     // =====================================================
