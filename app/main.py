@@ -9,7 +9,7 @@ from app.database import init_db, SessionLocal
 from app.models import User, RoleEnum
 from app.auth import hash_password
 from app.config import settings
-from app.routers import auth_routes, admin, employee, chatbot_routes, customer_auth
+from app.routers import auth_routes, admin, employee, chatbot_routes, customer_auth, customers, reviews, loyalty
 
 
 # 1. Initialize database tables
@@ -75,6 +75,9 @@ app.include_router(admin.router)
 app.include_router(employee.router)
 app.include_router(chatbot_routes.router)
 app.include_router(customer_auth.router)
+app.include_router(customers.router)
+app.include_router(reviews.router)
+app.include_router(loyalty.router)
 
 
 # 6. Configure static files and HTML templates
