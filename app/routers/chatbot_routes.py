@@ -55,8 +55,9 @@ def customer_chat(
     """
 
     reply = get_bot_reply(
-        payload.message,
-        db
-    )
+    payload.message,
+    db,
+    customer=current_customer
+)
 
     return ChatResponse(reply=reply)
