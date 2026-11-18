@@ -1,68 +1,64 @@
+"""
+main.py
+-------
+The entry point. This is the file you run: `uvicorn app.main:app --reload`
 
+What it does, in order:
+  1. Creates all database tables (if they don't already exist).
+  2. Upgrades an existing database with the new customer-role columns
+     (migrations.py - safe to run on every start).
+  3. Creates the first admin account from .env, if no admin exists yet.
+  4. Registers every router (auth, admin, employee, customer, chatbot).
+  5. Mounts the static folder (CSS/JS/QR codes) and serves the HTML pages.
+
+Page routes (return HTML, for the browser):
+  GET /                    -> homepage: Admin / Employee / Customer sign-in + register, chat
+  GET /admin/dashboard      -> admin dashboard page
+  GET /employee/dashboard   -> employee dashboard page
+  GET /customer/dashboard   -> customer dashboard page
+
+API routes (return JSON, used by the page's JavaScript):
+  /auth/login, /auth/register, /admin/*, /employee/*, /customer/*, /chat  (see the respective router files)
+"""
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
-from app.database import init_db, SessionLocal
+from app.database import Base, engine, SessionLocal
 from app.models import User, RoleEnum
 from app.auth import hash_password
 from app.config import settings
-from app.routers import (
-    auth_routes,
-    admin,
-    employee,
-    chatbot_routes,
-    customer_auth,
-    customers,
-    reviews,
-    loyalty,
-)
+from app.migrations import run_light_migrations
+from app.routers import auth_routes, admin, employee, customer, chatbot_routes
 
-# 1. Initialize database
-init_db()
+# 1. Create tables (new databases get everything), then 2. upgrade existing ones
+Base.metadata.create_all(bind=engine)
+run_light_migrations()
 
-
-# 2. Seed first admin
+# 3. Seed the first admin account if none exists yet
 def seed_first_admin():
     db = SessionLocal()
-
     try:
-        admin_exists = (
-            db.query(User)
-            .filter(User.role == RoleEnum.admin)
-            .first()
-        )
-
+        admin_exists = db.query(User).filter(User.role == RoleEnum.admin).first()
         if not admin_exists:
-            db.add(
-                User(
-                    full_name="Administrator",
-                    username=settings.FIRST_ADMIN_USERNAME,
-                    email=settings.FIRST_ADMIN_EMAIL,
-                    hashed_password=hash_password(
-                        settings.FIRST_ADMIN_PASSWORD
-                    ),
-                    role=RoleEnum.admin,
-                )
-            )
-
+            db.add(User(
+                full_name="Administrator",
+                username=settings.FIRST_ADMIN_USERNAME,
+                email=settings.FIRST_ADMIN_EMAIL,
+                hashed_password=hash_password(settings.FIRST_ADMIN_PASSWORD),
+                role=RoleEnum.admin,
+            ))
             db.commit()
-            print("[startup] First admin account created")
-
+            print(f"[startup] Created first admin account: {settings.FIRST_ADMIN_USERNAME}")
     finally:
         db.close()
 
-
 seed_first_admin()
 
-
-# 3. Create application
 app = FastAPI(title="Inventory Management System")
 
-
-# 4. CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -70,87 +66,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# 5. Register API routers
+# 4. Register API routers
 app.include_router(auth_routes.router)
 app.include_router(admin.router)
 app.include_router(employee.router)
+app.include_router(customer.router)
 app.include_router(chatbot_routes.router)
-app.include_router(customer_auth.router)
-app.include_router(customers.router)
-app.include_router(reviews.router)
-app.include_router(loyalty.router)
 
-
-# 6. Static files and templates
+# 5. Static files + HTML templates
 BASE_DIR = os.path.dirname(__file__)
-
-app.mount(
-    "/static",
-    StaticFiles(directory=os.path.join(BASE_DIR, "static")),
-    name="static",
-)
-
-templates = Jinja2Templates(
-    directory=os.path.join(BASE_DIR, "templates")
-)
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 
-# 7. Homepage
 @app.get("/")
 def homepage(request: Request):
     return templates.TemplateResponse(
-        request,
-        "index.html",
-        {"store_name": settings.STORE_NAME},
+        "index.html", {"request": request, "store_name": settings.STORE_NAME}
     )
 
 
-# 8. Customer registration page
-@app.get("/customer/register")
-def customer_register_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "customer_register.html",
-        {"store_name": settings.STORE_NAME},
-    )
-
-
-# 9. Customer login page
-@app.get("/customer/login")
-def customer_login_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "customer_login.html",
-        {"store_name": settings.STORE_NAME},
-    )
-
-
-# 10. Customer dashboard page
-@app.get("/customer/dashboard")
-def customer_dashboard_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "customer_dashboard.html",
-        {"store_name": settings.STORE_NAME},
-    )
-
-
-# 11. Admin dashboard
 @app.get("/admin/dashboard")
 def admin_dashboard(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "admin_dashboard.html",
-        {},
-    )
+    return templates.TemplateResponse("admin_dashboard.html", {"request": request})
 
 
-# 12. Employee dashboard
 @app.get("/employee/dashboard")
 def employee_dashboard(request: Request):
+    return templates.TemplateResponse("employee_dashboard.html", {"request": request})
+
+
+@app.get("/customer/dashboard")
+def customer_dashboard(request: Request):
     return templates.TemplateResponse(
-        request,
-        "employee_dashboard.html",
-        {},
+        "customer_dashboard.html", {"request": request, "store_name": settings.STORE_NAME}
     )
