@@ -278,6 +278,7 @@ def authenticate_customer(
 # GET CURRENT CUSTOMER
 # ============================================================
 
+
 def get_current_customer(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
@@ -285,7 +286,7 @@ def get_current_customer(
     """
     Retrieve the currently authenticated customer.
 
-    Only valid customer tokens are accepted.
+    Customer login does not require email or mobile verification.
     """
 
     exception = credentials_exception()
@@ -320,9 +321,7 @@ def get_current_customer(
     if customer is None or not customer.is_active:
         raise exception
 
-    if not customer.email_verified or not customer.mobile_verified:
-        raise exception
-
+    # Do not check email_verified or mobile_verified.
     return customer
 
 
