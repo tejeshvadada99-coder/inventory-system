@@ -343,21 +343,13 @@ function createElement(
 
 
 function getArray(data) {
-
-    if (Array.isArray(data)) {
-        return data;
-    }
-
-    if (Array.isArray(data.items)) {
-        return data.items;
-    }
-
-    if (Array.isArray(data.results)) {
-        return data.results;
-    }
-
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.items)) return data.items;
+    if (Array.isArray(data.results)) return data.results;
+    if (Array.isArray(data.purchases)) return data.purchases;
+    if (Array.isArray(data.transactions)) return data.transactions;
+    if (Array.isArray(data.reviews)) return data.reviews;
     return [];
-
 }
 
 
@@ -750,7 +742,7 @@ async function loadPurchaseHistory() {
                 createElement(
                     "h3",
                     "",
-                    `Receipt #${bill.id}`
+                    `Receipt #${bill.bill_id}`
                 )
             );
 
