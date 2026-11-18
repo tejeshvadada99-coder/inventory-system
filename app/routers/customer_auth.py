@@ -1,31 +1,27 @@
 
 """
-app/routers/customer_auth.py
-----------------------------
 Customer authentication routes.
 
 Features:
 - Customer registration
 - Customer login using email or mobile
 - Email OTP verification
-- Mobile OTP verification (SMS provider integration required)
+- Mobile verification placeholder (SMS integration required)
 - Forgot password
 - Password reset
 - JWT authentication
-
-Existing admin and employee authentication remains in auth_routes.py.
 """
 
 import hashlib
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Customer, CustomerVerification
+from app.models import Customer, CustomerVerification, VerificationType
 from app.schemas import (
     CustomerRegister,
     CustomerLoginRequest,
@@ -48,34 +44,27 @@ router = APIRouter(
 
 
 # --------------------------------------------------
-# Configuration helpers
+# Helpers
 # --------------------------------------------------
 
 def get_utc_now():
-    return datetime.now(timezone.utc)
+    """
+    Return UTC time without timezone information.
+    This matches SQLAlchemy DateTime columns that
+    are stored without timezone information.
+    """
+    return datetime.utcnow()
 
 
 def hash_otp(code: str) -> str:
-    """
-    Hash an OTP before storing it in the database.
-    """
-
     return hashlib.sha256(code.encode("utf-8")).hexdigest()
 
 
 def generate_otp() -> str:
-    """
-    Generate a cryptographically secure six-digit OTP.
-    """
-
     return f"{secrets.randbelow(1000000):06d}"
 
 
 def validate_password_length(password: str):
-    """
-    bcrypt supports passwords up to 72 UTF-8 bytes.
-    """
-
     if len(password.encode("utf-8")) > 72:
         raise HTTPException(
             status_code=400,
@@ -86,38 +75,79 @@ def validate_password_length(password: str):
 def create_verification(
     db: Session,
     customer: Customer,
-    verification_type: str
+    verification_type: VerificationType
 ):
     """
-    Create and store a hashed OTP.
-
-    verification_type:
-        email
-        mobile
-        password_reset
+    Store only the hashed OTP.
+    Supported types: email, mobile, password_reset.
     """
 
     code = generate_otp()
 
-    expires_minutes = (
-        settings.CUSTOMER_PASSWORD_RESET_EXPIRE_MINUTES
-        if verification_type == "password_reset"
-        else settings.CUSTOMER_VERIFICATION_EXPIRE_MINUTES
-    )
+    if verification_type == VerificationType.password_reset:
+        expires_minutes = settings.CUSTOMER_PASSWORD_RESET_EXPIRE_MINUTES
+    else:
+        expires_minutes = settings.CUSTOMER_VERIFICATION_EXPIRE_MINUTES
 
     verification = CustomerVerification(
         customer_id=customer.id,
         verification_type=verification_type,
-        code_hash=hash_otp(code),
+        token_hash=hash_otp(code),
         expires_at=get_utc_now() + timedelta(minutes=expires_minutes),
-        attempts=0,
-        is_used=False
+        verified_at=None,
+        attempts=0
     )
 
     db.add(verification)
     db.flush()
 
     return code
+
+
+def get_latest_verification(
+    db: Session,
+    customer_id: int,
+    verification_type: VerificationType
+):
+    return (
+        db.query(CustomerVerification)
+        .filter(
+            CustomerVerification.customer_id == customer_id,
+            CustomerVerification.verification_type == verification_type,
+            CustomerVerification.verified_at.is_(None)
+        )
+        .order_by(CustomerVerification.id.desc())
+        .first()
+    )
+
+
+def check_otp(verification: CustomerVerification, otp: str):
+    """
+    Validate expiry, attempts and OTP hash.
+    Increments attempts for each submitted code.
+    """
+
+    if verification.expires_at <= get_utc_now():
+        raise HTTPException(
+            status_code=400,
+            detail="OTP has expired."
+        )
+
+    if verification.attempts >= settings.CUSTOMER_VERIFICATION_MAX_ATTEMPTS:
+        raise HTTPException(
+            status_code=429,
+            detail="Maximum OTP attempts exceeded."
+        )
+
+    verification.attempts += 1
+
+    if not secrets.compare_digest(
+        verification.token_hash,
+        hash_otp(otp)
+    ):
+        return False
+
+    return True
 
 
 # --------------------------------------------------
@@ -133,13 +163,6 @@ def register_customer(
     payload: CustomerRegister,
     db: Session = Depends(get_db)
 ):
-    """
-    Register a new customer.
-
-    Both email and mobile verification are required
-    before customer login is allowed.
-    """
-
     if payload.password != payload.confirm_password:
         raise HTTPException(
             status_code=400,
@@ -180,11 +203,10 @@ def register_customer(
         db.add(customer)
         db.flush()
 
-        # Generate email OTP.
         email_code = create_verification(
             db,
             customer,
-            "email"
+            VerificationType.email
         )
 
         db.commit()
@@ -194,16 +216,16 @@ def register_customer(
         db.rollback()
         raise
 
-    # Send email after the database transaction commits.
+    # Send the email after saving the account.
     try:
         send_customer_verification_email(
-            email,
+            customer.email,
             customer.name,
             email_code
         )
     except Exception:
-        # Account is created, but email delivery failed.
-        # A resend-verification endpoint will be needed.
+        # Do not expose OTP or email delivery errors to the client.
+        # Add a resend-verification route for failed delivery.
         pass
 
     return CustomerRegistrationOut(
@@ -223,10 +245,6 @@ def customer_login(
     payload: CustomerLoginRequest,
     db: Session = Depends(get_db)
 ):
-    """
-    Login using registered email or mobile number.
-    """
-
     identifier = payload.identifier.strip()
 
     customer = db.query(Customer).filter(
@@ -282,50 +300,51 @@ def verify_customer_email(
     otp: str,
     db: Session = Depends(get_db)
 ):
-    """
-    Verify the customer's email using OTP.
-    """
-
     customer = db.query(Customer).filter(
         Customer.id == customer_id
     ).first()
 
     if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="Customer not found."
+        )
 
     if customer.email_verified:
         return {"message": "Email is already verified."}
 
-    verification = db.query(CustomerVerification).filter(
-        CustomerVerification.customer_id == customer_id,
-        CustomerVerification.verification_type == "email",
-        CustomerVerification.is_used == False
-    ).order_by(
-        CustomerVerification.id.desc()
-    ).first()
+    verification = get_latest_verification(
+        db,
+        customer_id,
+        VerificationType.email
+    )
 
     if not verification:
-        raise HTTPException(status_code=400, detail="No active verification code found.")
+        raise HTTPException(
+            status_code=400,
+            detail="No active verification code found."
+        )
 
-    if verification.expires_at <= get_utc_now():
-        raise HTTPException(status_code=400, detail="OTP has expired.")
+    try:
+        valid = check_otp(verification, otp)
 
-    if verification.attempts >= settings.CUSTOMER_VERIFICATION_MAX_ATTEMPTS:
-        raise HTTPException(status_code=429, detail="Maximum OTP attempts exceeded.")
+        if not valid:
+            db.commit()
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid OTP."
+            )
 
-    verification.attempts += 1
+        verification.verified_at = get_utc_now()
+        customer.email_verified = True
 
-    if not secrets.compare_digest(
-        verification.code_hash,
-        hash_otp(otp)
-    ):
         db.commit()
-        raise HTTPException(status_code=400, detail="Invalid OTP.")
 
-    verification.is_used = True
-    customer.email_verified = True
-
-    db.commit()
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        raise
 
     return {"message": "Email verified successfully."}
 
@@ -341,10 +360,8 @@ def verify_customer_mobile(
     db: Session = Depends(get_db)
 ):
     """
-    Verify mobile OTP.
-
-    This endpoint must only be enabled after a real SMS
-    provider is connected and OTP delivery is implemented.
+    Mobile OTP verification is intentionally unavailable
+    until a real SMS provider and OTP delivery flow exist.
     """
 
     raise HTTPException(
@@ -362,27 +379,30 @@ def forgot_customer_password(
     email: str,
     db: Session = Depends(get_db)
 ):
-    """
-    Request a password reset OTP through registered email.
-    """
-
     customer = db.query(Customer).filter(
         Customer.email == email.strip().lower()
     ).first()
 
-    # Avoid revealing whether an account exists.
-    if not customer or not customer.is_active:
-        return {
-            "message": "If an eligible account exists, password reset instructions will be sent."
-        }
-
-    code = create_verification(
-        db,
-        customer,
-        "password_reset"
+    # Do not reveal whether an account exists.
+    generic_message = (
+        "If an eligible account exists, password reset instructions will be sent."
     )
 
-    db.commit()
+    if not customer or not customer.is_active:
+        return {"message": generic_message}
+
+    try:
+        code = create_verification(
+            db,
+            customer,
+            VerificationType.password_reset
+        )
+
+        db.commit()
+
+    except Exception:
+        db.rollback()
+        raise
 
     try:
         send_customer_verification_email(
@@ -391,12 +411,9 @@ def forgot_customer_password(
             code
         )
     except Exception:
-        # Do not expose account details or OTP in the response.
         pass
 
-    return {
-        "message": "If an eligible account exists, password reset instructions will be sent."
-    }
+    return {"message": generic_message}
 
 
 # --------------------------------------------------
@@ -411,10 +428,6 @@ def reset_customer_password(
     confirm_password: str,
     db: Session = Depends(get_db)
 ):
-    """
-    Reset password using email OTP.
-    """
-
     if new_password != confirm_password:
         raise HTTPException(
             status_code=400,
@@ -427,38 +440,43 @@ def reset_customer_password(
         Customer.email == email.strip().lower()
     ).first()
 
-    if not customer:
-        raise HTTPException(status_code=400, detail="Invalid reset request.")
+    if not customer or not customer.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid reset request."
+        )
 
-    verification = db.query(CustomerVerification).filter(
-        CustomerVerification.customer_id == customer.id,
-        CustomerVerification.verification_type == "password_reset",
-        CustomerVerification.is_used == False
-    ).order_by(
-        CustomerVerification.id.desc()
-    ).first()
+    verification = get_latest_verification(
+        db,
+        customer.id,
+        VerificationType.password_reset
+    )
 
     if not verification:
-        raise HTTPException(status_code=400, detail="Invalid reset request.")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid reset request."
+        )
 
-    if verification.expires_at <= get_utc_now():
-        raise HTTPException(status_code=400, detail="Reset code has expired.")
+    try:
+        valid = check_otp(verification, otp)
 
-    if verification.attempts >= settings.CUSTOMER_VERIFICATION_MAX_ATTEMPTS:
-        raise HTTPException(status_code=429, detail="Maximum attempts exceeded.")
+        if not valid:
+            db.commit()
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid reset code."
+            )
 
-    verification.attempts += 1
+        verification.verified_at = get_utc_now()
+        customer.hashed_password = hash_password(new_password)
 
-    if not secrets.compare_digest(
-        verification.code_hash,
-        hash_otp(otp)
-    ):
         db.commit()
-        raise HTTPException(status_code=400, detail="Invalid reset code.")
 
-    verification.is_used = True
-    customer.hashed_password = hash_password(new_password)
-
-    db.commit()
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        raise
 
     return {"message": "Password reset successfully."}
