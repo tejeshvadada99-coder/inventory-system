@@ -1,7 +1,8 @@
 # Inventory Management System
 
 FastAPI + PostgreSQL backend, server-rendered HTML/CSS/JS frontend.
-One homepage with Admin/Employee login and a public AI-style chat widget for customers.
+One homepage with Admin / Employee / Customer sign-in, customer self-registration, and a chat assistant.
+Dark, animated UI. Three roles: **admin**, **employee**, **customer**.
 
 ## 1. Setup
 
@@ -39,6 +40,20 @@ emailed (this is logged, not an error).
 
 ---
 
+### Upgrading your existing (live) database
+Nothing to do by hand. On startup `app/migrations.py` adds the new customer-role
+columns to your existing Render database (`IF NOT EXISTS`, safe on every start).
+Just redeploy. Existing admins, employees, products and bills are untouched.
+
+### Render free plan notes
+- **No email/OTP verification** on customer registration (by design).
+- **Outbound email**: bill and alert emails use SMTP. If your plan blocks SMTP,
+  sending fails quietly (10 s timeout, logged) and the app keeps working.
+- **Files**: free instances lose saved files on restart. Customers' PDF/QR
+  downloads are re-created from the database on demand, so they still work.
+
+---
+
 ## 2. How the pieces fit together
 
 ```
@@ -57,8 +72,24 @@ admin.py / employee.py routers → auth.py verifies the JWT and role
 database.py session → models.py tables in PostgreSQL
 ```
 
-The customer chat widget skips all of this — `/chat` has no login
-requirement, since any visitor should be able to use it.
+Customers use the same flow: `POST /auth/register` (or `/auth/login` with
+email or mobile) -> JWT -> `/customer/dashboard` -> `/customer/*` endpoints.
+
+The chat widget works for guests too - `/chat` needs no login. If a customer
+token is sent, replies become personal (points, last order, members-only offers).
+
+### The customer role in short
+- **Registration**: name, mobile, email, password. No verification step.
+- **Linking old bills**: if staff already billed that mobile, the new account is
+  linked (old bills + points appear) only when the **email also matches** the one
+  saved at billing. Otherwise registration is refused, because without OTP we
+  can't prove ownership of the number. Staff can fix a customer's email from the
+  Employee > Customers tab ("Edit email"), then the customer registers.
+- **Loyalty**: 1 point per `LOYALTY_SPEND_PER_POINT` spent (default 100). Only
+  members earn points. Tiers: Bronze, Silver (`SILVER_POINTS`), Gold (`GOLD_POINTS`).
+- **Offers**: admins can tick "Members only". Guests never see those.
+- **Alerts**: opted-in members get an email for new offers and restocks
+  (admin Products > Restock on an out-of-stock item).
 
 ---
 
@@ -70,20 +101,22 @@ requirement, since any visitor should be able to use it.
 |---|---|
 | `config.py` | Loads every setting from `.env` into one `settings` object. Every other file reads config from here, never from `os.environ` directly. |
 | `database.py` | Creates the SQLAlchemy engine (the PostgreSQL connection) and `get_db()`, a FastAPI dependency that hands each request its own DB session and closes it afterward. |
-| `models.py` | The database schema as Python classes: `User` (admins + employees), `Category`, `Product`, `Customer`, `Bill`, `Sale` (one line item of a bill), `Offer`. Tables are created automatically from these on startup. |
+| `models.py` | The database schema as Python classes: `User` (admins, employees + customers), `Category`, `Product`, `Customer` (now with `user_id`, `loyalty_points`, `alerts_enabled`), `Bill` (`points_earned`), `Sale`, `Offer` (`members_only`). Tables are created automatically from these on startup. |
+| `migrations.py` | NEW. Adds the new columns/role to an already-existing PostgreSQL database on startup. Safe to run every time. |
 | `schemas.py` | Pydantic classes that define what JSON goes in and out of the API. Kept separate from `models.py` so internal fields (like a hashed password) never leak into an API response. |
-| `auth.py` | Password hashing (bcrypt), JWT creation/verification, and the `require_admin` / `require_employee` dependencies that guard routes by role. |
-| `chatbot.py` | The rule-based chatbot: matches keywords in the customer's message (offers/timings/stock/greeting) and answers using live data from the database. No external AI API — free and instant. |
+| `auth.py` | Password hashing (bcrypt), JWT creation/verification, the `require_admin` / `require_employee` / `require_customer` guards, and `get_optional_user` (guest-or-customer, used by the chatbot). |
+| `chatbot.py` | The rule-based chatbot: offers/timings/stock/greeting for everyone, plus personal answers (points, last orders, members-only offers) for signed-in customers. No external AI API — free and instant. |
 | `main.py` | The entry point. Creates tables, seeds the first admin, registers all routers, mounts `/static`, and serves the three HTML pages. Run this with `uvicorn`. |
 
 ### Routers — `app/routers/` (each file = one group of related endpoints)
 
 | File | Endpoints | Who can call it |
 |---|---|---|
-| `auth_routes.py` | `POST /auth/login` | Anyone with valid credentials |
-| `admin.py` | `/admin/employees`, `/admin/categories`, `/admin/products`, `/admin/sales`, `/admin/offers` | Admins only |
-| `employee.py` | `/employee/products`, `/employee/customers`, `POST /employee/bills` | Employees (and admins) |
-| `chatbot_routes.py` | `POST /chat` | Public, no login |
+| `auth_routes.py` | `POST /auth/login`, `POST /auth/register` | Anyone |
+| `admin.py` | `/admin/employees`, `/categories`, `/products`, `/sales`, `/offers`, `/customers` (+ email alerts on new offers / restocks) | Admins only |
+| `employee.py` | `/employee/products`, `/customers`, `/customers/lookup`, `PUT /customers/{id}`, `POST /bills` (awards points to members) | Employees (and admins) |
+| `customer.py` | NEW. `/customer/me` (GET/PUT), `/bills`, `/bills/{id}/pdf`, `/bills/{id}/qr`, `/offers` | Customers only (own data) |
+| `chatbot_routes.py` | `POST /chat` | Public; personal replies if a customer token is sent |
 
 ### Utilities — `app/utils/`
 
@@ -91,31 +124,37 @@ requirement, since any visitor should be able to use it.
 |---|---|
 | `qr_code.py` | Generates a QR code PNG for a finished bill, saved to `static/qrcodes/`. |
 | `pdf_bill.py` | Builds the itemized PDF receipt (with the QR code embedded) using fpdf2. |
-| `email_sender.py` | Sends that PDF to the customer's email over SMTP. Fails quietly (logs a warning) if SMTP isn't configured, so billing never breaks because of email. |
+| `email_sender.py` | Sends the PDF (and plain alert emails) over SMTP with a timeout. Fails quietly if SMTP isn't configured or is blocked, so billing never breaks because of email. |
+| `alerts.py` | NEW. Finds opted-in members and emails them about new offers / restocks, as a background task. |
+| `customer_helpers.py` | NEW. Mobile-number matching, loyalty points and tier rules, in one place. |
 
 ### Frontend — `app/templates/` (HTML structure only)
 
 | File | Page |
 |---|---|
-| `index.html` | Homepage: Admin/Employee login tabs + the floating customer chat widget. |
-| `admin_dashboard.html` | Sidebar with Overview / Employees / Categories / Products / Sales / Offers tabs. |
-| `employee_dashboard.html` | Sidebar with New Bill / Products / Customers tabs. |
+| `index.html` | Homepage: Admin / Employee / Customer tabs, customer Sign in + Create account, chat bubble. |
+| `customer_dashboard.html` | NEW. Overview / Purchases / Rewards & offers / Profile. |
+| `_chat_widget.html` | NEW. The chat bubble markup, shared by the homepage and customer dashboard. |
+| `admin_dashboard.html` | Sidebar with Overview / Employees / Categories / Products / Sales / Offers / Customers tabs. |
+| `employee_dashboard.html` | Sidebar with New Bill / Products / Customers tabs (mobile lookup auto-fills the bill form). |
 
 ### Frontend — `app/static/js/` (all behavior)
 
 | File | What it does |
 |---|---|
-| `auth.js` | Shared across every page: stores the JWT in `localStorage`, and `apiFetch()` — a `fetch()` wrapper that attaches the token to every request and redirects to `/` on a 401. |
-| `home.js` | Homepage: submits the login form, and drives the chat widget (sends each message to `/chat`, renders the reply). |
+| `auth.js` | Shared across every page: stores the JWT, `apiFetch()` / `apiBlob()` (attach the token, redirect on 401), `guardPage()` per role, `esc()` (HTML-escape, needed now that customers type their own names), count-up and button-spinner helpers. |
+| `home.js` | Homepage: tab switching, sign-in and customer registration, redirect to the right dashboard. |
+| `chat.js` | NEW. The chat widget (guest and personalised customer mode). |
+| `customer.js` | NEW. Customer dashboard: overview, purchases (QR + PDF download), rewards/offers, profile and alert switch. |
 | `admin.js` | Admin dashboard: loads and renders each tab's table, handles all "add" forms and delete buttons. |
 | `employee.js` | Employee dashboard: product/customer browsing, and the billing cart — add items, then `POST /employee/bills` to generate the QR receipt and trigger the email. |
 
 ### Frontend — `app/static/css/style.css`
 
-One stylesheet, using CSS variables at the top for the whole palette
-("stockroom ledger" theme: ink-navy sidebar, warm paper background, a
-single amber accent for primary actions and stock-level badges). Change
-the `:root` values there to re-theme the whole app.
+One stylesheet for the dark theme. All colours are CSS variables in `:root`
+(navy surfaces, teal-to-blue accent). Animations are pure CSS (fade-up, hover
+lift/glow, sliding tab pill, skeleton loaders, toasts) and switch off
+automatically for users who prefer reduced motion.
 
 ---
 
@@ -133,5 +172,5 @@ the `:root` values there to re-theme the whole app.
 
 ## 5. Extending later
 - Swap `chatbot.py`'s rule-based logic for a real LLM call — no other file needs to change, since `routers/chatbot_routes.py` only calls `get_bot_reply()`.
-- Add password-reset / "forgot password" flow in `auth.py` + a new route.
+- Add email/OTP verification and "forgot password" later (needs a working SMTP or SMS provider, which the free plan may block).
 - Add a `sales chart` on the Overview tab using the data already returned by `/admin/sales`.
