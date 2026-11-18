@@ -18,7 +18,6 @@ from app.models import User, Customer, RoleEnum
 # PASSWORD SECURITY
 # ============================================================
 
-# Keep bcrypt for compatibility with existing password hashes.
 pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto"
@@ -56,11 +55,7 @@ def create_access_token(
     data: dict,
     expires_delta: Optional[timedelta] = None
 ) -> str:
-    """
-    Create a JWT access token.
-
-    Existing Admin and Employee token creation remains compatible.
-    """
+    """Create a JWT access token."""
 
     to_encode = data.copy()
 
@@ -83,11 +78,7 @@ def create_access_token(
 
 
 def create_customer_access_token(customer_id: int) -> str:
-    """
-    Create a separate JWT token for a registered customer.
-
-    Customer tokens use the customer database ID as their subject.
-    """
+    """Create a separate JWT token for a registered customer."""
 
     return create_access_token({
         "sub": str(customer_id),
@@ -118,11 +109,7 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> User:
-    """
-    Retrieve the authenticated Admin or Employee.
-
-    Customer tokens are explicitly rejected here.
-    """
+    """Retrieve the authenticated Admin or Employee."""
 
     exception = credentials_exception()
 
@@ -182,10 +169,7 @@ def require_admin(
 def require_employee(
     current_user: User = Depends(get_current_user)
 ) -> User:
-    """
-    Allow Employees and Admins to access employee tools.
-    Admins retain access to employee-level operations.
-    """
+    """Allow Employees and Admins to access employee tools."""
 
     if current_user.role not in (
         RoleEnum.employee,
@@ -211,8 +195,7 @@ def authenticate_customer(
     """
     Authenticate a customer using email or mobile number.
 
-    Both email and mobile verification are required
-    before customer login is permitted.
+    Email and mobile verification are NOT required.
     """
 
     identifier = identifier.strip()
@@ -239,7 +222,7 @@ def authenticate_customer(
         .first()
     )
 
-    # Use a generic message to avoid revealing account existence.
+    # Check account and password.
     if (
         customer is None
         or not customer.hashed_password
@@ -259,25 +242,13 @@ def authenticate_customer(
             detail="Your customer account is inactive"
         )
 
-    if not customer.email_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Please verify your email before logging in"
-        )
-
-    if not customer.mobile_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Please verify your mobile number before logging in"
-        )
-
+    # No OTP, email verification or mobile verification required.
     return customer
 
 
 # ============================================================
 # GET CURRENT CUSTOMER
 # ============================================================
-
 
 def get_current_customer(
     token: str = Depends(oauth2_scheme),
@@ -332,6 +303,6 @@ def get_current_customer(
 def require_customer(
     current_customer: Customer = Depends(get_current_customer)
 ) -> Customer:
-    """Allow only authenticated and verified customers."""
+    """Allow authenticated customers to access customer features."""
 
     return current_customer
