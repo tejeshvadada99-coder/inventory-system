@@ -1,144 +1,657 @@
-<!--
-  index.html
-  ----------
-  The public homepage. Two things live here:
-    1. A tabbed login card (Admin / Employee) — same form, the "tab" just
-       affects which dashboard we redirect to after login.
-    2. A floating chat bubble in the corner for customers — no login
-       required, talks to POST /chat.
 
-  All behavior is in static/js/home.js; this file is just structure + copy.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ store_name }} — Inventory System</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css">
 
-<style>
-:root{color-scheme:dark;--bg:#080d18;--text:#f1f5ff;--muted:#9aabc3;--accent:#8060ff;--cyan:#35d5e5;--line:rgba(148,163,184,.16)}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,system-ui,sans-serif;background:radial-gradient(ellipse at 15% 12%,rgba(111,82,255,.25),transparent 34%),radial-gradient(ellipse at 82% 78%,rgba(28,194,211,.14),transparent 32%),#080d18;overflow-x:hidden}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(to bottom,black,transparent 85%)}
-button,input{font:inherit}
-.home-wrap{position:relative;z-index:1;max-width:1240px;min-height:100vh;margin:auto;padding:30px clamp(20px,5vw,70px) 80px}
-.home-header{display:flex;align-items:center;gap:16px;padding:12px 0 28px;animation:fade .7s both}
-.home-header .tag{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,#805eff,#25c8d8);font:700 13px 'Space Grotesk',sans-serif;box-shadow:0 12px 30px #6955db55}
-.home-header h1{margin:0;font:700 clamp(19px,3vw,25px) 'Space Grotesk',sans-serif;letter-spacing:-.6px}
-.home-main{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(330px,.85fr);align-items:center;gap:clamp(40px,8vw,110px);min-height:calc(100vh - 130px);padding:30px 0 70px}
-.hero-copy{animation:rise .75s .08s both}
-.eyebrow{display:inline-flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid rgba(53,213,229,.25);border-radius:99px;background:rgba(53,213,229,.07);color:#75e8ee;font-size:10px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase}
-.eyebrow:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 13px var(--cyan);animation:pulse 2s infinite}
-.hero-copy h2{max-width:650px;margin:25px 0 20px;font:700 clamp(39px,5.4vw,68px)/1.06 'Space Grotesk',sans-serif;letter-spacing:-2.8px}
-.hero-copy h2 em{font-style:normal;background:linear-gradient(100deg,#a28bff,#60e2eb);background-clip:text;-webkit-background-clip:text;color:transparent}
-.hero-copy p{max-width:560px;color:var(--muted);font-size:15px;line-height:1.9}
-.ledger-strip{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
-.ledger-strip>div{min-width:125px;padding:15px 17px;border:1px solid var(--line);border-radius:13px;background:rgba(17,29,48,.68);color:#9eacc3;font-size:11px}
-.ledger-strip b{display:block;margin-bottom:4px;color:#f3f6ff;font:700 21px 'Space Grotesk',sans-serif}
-.login-card{position:relative;overflow:hidden;padding:30px;border:1px solid rgba(163,149,255,.22);border-radius:24px;background:linear-gradient(145deg,rgba(22,35,58,.96),rgba(12,21,37,.96));box-shadow:0 30px 90px rgba(0,0,0,.42),0 0 55px rgba(124,92,255,.08);animation:rise .8s .18s both}
-.login-card:before{content:"";position:absolute;top:-110px;right:-100px;width:240px;height:240px;border-radius:50%;background:rgba(124,92,255,.12);filter:blur(4px);pointer-events:none}
-.login-tabs{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;margin-bottom:27px;border:1px solid var(--line);border-radius:12px;background:rgba(5,12,24,.5)}
-.login-tabs button{padding:11px;border:0;border-radius:9px;background:transparent;color:#9eacc3;font-weight:700;transition:.2s}
-.login-tabs button.active{background:linear-gradient(110deg,#7958f4,#328bd9);color:white;box-shadow:0 7px 20px #5b55d844}
-.login-form{position:relative;display:grid;gap:18px}
-.login-form label{display:block;margin-bottom:8px;color:#bdc9dc;font-size:12px;font-weight:700}
-.login-form input,#chat-input{width:100%;min-height:48px;padding:12px 14px;border:1px solid rgba(148,163,184,.2);border-radius:11px;outline:none;background:#0a1424;color:#fff;transition:border-color .2s,box-shadow .2s}
-.login-form input:focus,#chat-input:focus{border-color:#8d78ff;box-shadow:0 0 0 3px rgba(124,92,255,.16)}
-.btn-primary{width:100%;min-height:49px;border:0;border-radius:11px;background:linear-gradient(110deg,#7958f4,#328edc 72%,#25bdcb);color:#fff;font-weight:800;box-shadow:0 12px 25px rgba(91,88,226,.25);transition:transform .2s,filter .2s}
-.btn-primary:hover{transform:translateY(-2px);filter:brightness(1.12)}
-.login-hint{position:relative;margin:18px 0 0;color:#8192ad;font-size:11px;line-height:1.7;text-align:center}
-.login-error{color:#ff9daa;font-size:12px}
-.chat-toggle{position:fixed;z-index:50;right:26px;bottom:25px;width:60px;height:60px;border:1px solid rgba(255,255,255,.25);border-radius:20px;background:linear-gradient(135deg,#8060ff,#20bccc);color:#fff;font-size:24px;box-shadow:0 14px 35px #5744cc66;transition:transform .2s}
-.chat-toggle:hover{transform:translateY(-4px) rotate(-5deg)}
-.chat-window{position:fixed;z-index:49;right:26px;bottom:100px;width:min(370px,calc(100vw - 32px));max-height:min(570px,calc(100vh - 130px));overflow:hidden;border:1px solid rgba(153,139,255,.25);border-radius:20px;background:#101b2d;box-shadow:0 25px 80px #0009;backdrop-filter:blur(20px)}
-.chat-header{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:linear-gradient(110deg,#6c51dd,#237fbb);color:#fff;font-weight:700}
-.chat-header button{border:0;border-radius:8px;padding:5px 8px}
-.chat-header .dot{display:inline-block;width:8px;height:8px;margin-right:9px;border-radius:50%;background:#5ff0bc;box-shadow:0 0 12px #5ff0bc}
-.chat-body{max-height:280px;overflow:auto;padding:16px;color: black; background-color: #101b2d}
-.chat-quick{display:flex;flex-wrap:wrap;gap:7px;padding:0 14px 12px}
-.chat-quick button{padding:7px 9px;border:1px solid rgba(137,119,255,.25);border-radius:99px;background:rgba(124,92,255,.1);color:#c6c0ff;font-size:10px}
-.chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
-.chat-input-row input{min-width:0;flex:1}
-.chat-input-row button{padding:0 15px;border:0;border-radius:10px;background:#7658ef;color:white;font-weight:700}
-@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-@keyframes pulse{50%{opacity:.45;box-shadow:0 0 3px var(--cyan)}}
-@media(max-width:820px){.home-main{grid-template-columns:1fr;gap:38px;max-width:650px;margin:auto;padding-top:28px}.hero-copy h2{font-size:clamp(40px,8vw,58px)}.login-card{max-width:520px;width:100%;margin:auto}.home-wrap{padding-top:18px}}
-@media(max-width:520px){.home-wrap{padding:14px 17px 90px}.home-header{padding-bottom:12px}.home-main{padding-top:22px;gap:28px}.hero-copy h2{margin:19px 0 14px;font-size:42px;letter-spacing:-1.8px}.hero-copy p{font-size:13px}.ledger-strip{gap:8px;margin-top:22px}.ledger-strip>div{flex:1;min-width:calc(33.33% - 8px);padding:12px 10px;font-size:10px}.ledger-strip b{font-size:18px}.login-card{padding:21px;border-radius:19px}.chat-toggle{right:17px;bottom:17px;width:55px;height:55px}.chat-window{right:16px;bottom:84px}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
-</style>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080d18;
+      --text: #f1f5ff;
+      --muted: #9aabc3;
+      --accent: #8060ff;
+      --cyan: #35d5e5;
+      --line: rgba(148,163,184,.16);
+    }
 
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse at 15% 12%,rgba(111,82,255,.25),transparent 34%),
+        radial-gradient(ellipse at 82% 78%,rgba(28,194,211,.14),transparent 32%),
+        #080d18;
+      overflow-x: hidden;
+    }
+
+    body:before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(to bottom,black,transparent 85%);
+    }
+
+    button,input { font: inherit; }
+
+    .home-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1240px;
+      min-height: 100vh;
+      margin: auto;
+      padding: 30px clamp(20px,5vw,70px) 80px;
+    }
+
+    .home-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 0 28px;
+      animation: fade .7s both;
+    }
+
+    .home-header .tag {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 15px;
+      background: linear-gradient(135deg,#805eff,#25c8d8);
+      font: 700 13px 'Space Grotesk',sans-serif;
+      box-shadow: 0 12px 30px #6955db55;
+    }
+
+    .home-header h1 {
+      margin: 0;
+      font: 700 clamp(19px,3vw,25px) 'Space Grotesk',sans-serif;
+    }
+
+    .home-main {
+      display: grid;
+      grid-template-columns: minmax(0,1.15fr) minmax(330px,.85fr);
+      align-items: center;
+      gap: clamp(40px,8vw,110px);
+      min-height: calc(100vh - 130px);
+      padding: 30px 0 70px;
+    }
+
+    .hero-copy { animation: rise .75s .08s both; }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 12px;
+      border: 1px solid rgba(53,213,229,.25);
+      border-radius: 99px;
+      background: rgba(53,213,229,.07);
+      color: #75e8ee;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.7px;
+      text-transform: uppercase;
+    }
+
+    .eyebrow:before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 13px var(--cyan);
+      animation: pulse 2s infinite;
+    }
+
+    .hero-copy h2 {
+      max-width: 650px;
+      margin: 25px 0 20px;
+      font: 700 clamp(39px,5.4vw,68px)/1.06 'Space Grotesk',sans-serif;
+      letter-spacing: -2.8px;
+    }
+
+    .hero-copy h2 em {
+      font-style: normal;
+      background: linear-gradient(100deg,#a28bff,#60e2eb);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .hero-copy p {
+      max-width: 560px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.9;
+    }
+
+    .ledger-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .ledger-strip>div {
+      min-width: 125px;
+      padding: 15px 17px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: rgba(17,29,48,.68);
+      color: #9eacc3;
+      font-size: 11px;
+    }
+
+    .ledger-strip b {
+      display: block;
+      margin-bottom: 4px;
+      color: #f3f6ff;
+      font: 700 21px 'Space Grotesk',sans-serif;
+    }
+
+    .login-card {
+      position: relative;
+      overflow: hidden;
+      padding: 30px;
+      border: 1px solid rgba(163,149,255,.22);
+      border-radius: 24px;
+      background: linear-gradient(145deg,rgba(22,35,58,.96),rgba(12,21,37,.96));
+      box-shadow: 0 30px 90px rgba(0,0,0,.42),0 0 55px rgba(124,92,255,.08);
+      animation: rise .8s .18s both;
+    }
+
+    .login-card:before {
+      content: "";
+      position: absolute;
+      top: -110px;
+      right: -100px;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: rgba(124,92,255,.12);
+      filter: blur(4px);
+      pointer-events: none;
+    }
+
+    .login-tabs {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 5px;
+      margin-bottom: 27px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(5,12,24,.5);
+    }
+
+    .login-tabs button {
+      padding: 11px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #9eacc3;
+      font-weight: 700;
+      transition: .2s;
+    }
+
+    .login-tabs button.active {
+      background: linear-gradient(110deg,#7958f4,#328bd9);
+      color: white;
+      box-shadow: 0 7px 20px #5b55d844;
+    }
+
+    .login-form {
+      position: relative;
+      display: grid;
+      gap: 18px;
+    }
+
+    .login-form label {
+      display: block;
+      margin-bottom: 8px;
+      color: #bdc9dc;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .login-form input,#chat-input {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px 14px;
+      border: 1px solid rgba(148,163,184,.2);
+      border-radius: 11px;
+      outline: none;
+      background: #0a1424;
+      color: #fff;
+    }
+
+    .login-form input:focus,#chat-input:focus {
+      border-color: #8d78ff;
+      box-shadow: 0 0 0 3px rgba(124,92,255,.16);
+    }
+
+    .btn-primary {
+      width: 100%;
+      min-height: 49px;
+      border: 0;
+      border-radius: 11px;
+      background: linear-gradient(110deg,#7958f4,#328edc 72%,#25bdcb);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 25px rgba(91,88,226,.25);
+      transition: transform .2s,filter .2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.12);
+    }
+
+    .login-hint {
+      position: relative;
+      margin: 18px 0 0;
+      color: #8192ad;
+      font-size: 11px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .login-error { color: #ff9daa; font-size: 12px; }
+
+    /* CUSTOMER PORTAL */
+
+    .customer-portal {
+      position: relative;
+      z-index: 1;
+      max-width: 750px;
+      margin: 0 auto 30px;
+      padding: 25px;
+      border: 1px solid rgba(53,213,229,.2);
+      border-radius: 20px;
+      background: linear-gradient(145deg,rgba(17,31,51,.94),rgba(12,21,37,.94));
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      text-align: center;
+      animation: rise .8s .3s both;
+    }
+
+    .customer-portal h3 {
+      margin: 0 0 9px;
+      font: 700 23px 'Space Grotesk',sans-serif;
+    }
+
+    .customer-portal p {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .customer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .customer-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 180px;
+      min-height: 46px;
+      padding: 12px 20px;
+      border: 1px solid rgba(148,163,184,.2);
+      border-radius: 11px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      transition: .2s;
+    }
+
+    .customer-btn.login {
+      background: linear-gradient(110deg,#7958f4,#328bd9);
+      border-color: transparent;
+    }
+
+    .customer-btn.register {
+      background: rgba(53,213,229,.08);
+      border-color: rgba(53,213,229,.35);
+      color: #80e9ef;
+    }
+
+    .customer-btn:hover {
+      transform: translateY(-3px);
+      filter: brightness(1.15);
+    }
+
+    /* CHATBOT */
+
+    .chat-toggle {
+      position: fixed;
+      z-index: 50;
+      right: 26px;
+      bottom: 25px;
+      width: 60px;
+      height: 60px;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 20px;
+      background: linear-gradient(135deg,#8060ff,#20bccc);
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 14px 35px #5744cc66;
+      transition: transform .2s;
+    }
+
+    .chat-toggle:hover { transform: translateY(-4px) rotate(-5deg); }
+
+    .chat-window {
+      position: fixed;
+      z-index: 49;
+      right: 26px;
+      bottom: 100px;
+      width: min(370px,calc(100vw - 32px));
+      max-height: min(570px,calc(100vh - 130px));
+      overflow: hidden;
+      border: 1px solid rgba(153,139,255,.25);
+      border-radius: 20px;
+      background: #101b2d;
+      box-shadow: 0 25px 80px #0009;
+      backdrop-filter: blur(20px);
+    }
+
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 18px;
+      background: linear-gradient(110deg,#6c51dd,#237fbb);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .chat-header button {
+      border: 0;
+      border-radius: 8px;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+
+    .chat-header .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 9px;
+      border-radius: 50%;
+      background: #5ff0bc;
+      box-shadow: 0 0 12px #5ff0bc;
+    }
+
+    .chat-body {
+      max-height: 280px;
+      overflow: auto;
+      padding: 16px;
+      color: white;
+      background: #101b2d;
+    }
+
+    .chat-quick {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding: 0 14px 12px;
+    }
+
+    .chat-quick button {
+      padding: 7px 9px;
+      border: 1px solid rgba(137,119,255,.25);
+      border-radius: 99px;
+      background: rgba(124,92,255,.1);
+      color: #c6c0ff;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .chat-input-row input { min-width: 0; flex: 1; }
+
+    .chat-input-row button {
+      padding: 0 15px;
+      border: 0;
+      border-radius: 10px;
+      background: #7658ef;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fade {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      50% { opacity: .45; box-shadow: 0 0 3px var(--cyan); }
+    }
+
+    @media(max-width:820px) {
+      .home-main {
+        grid-template-columns: 1fr;
+        gap: 38px;
+        max-width: 650px;
+        margin: auto;
+        padding-top: 28px;
+      }
+
+      .hero-copy h2 { font-size: clamp(40px,8vw,58px); }
+      .login-card { max-width: 520px; width: 100%; margin: auto; }
+      .home-wrap { padding-top: 18px; }
+    }
+
+    @media(max-width:520px) {
+      .home-wrap { padding: 14px 17px 90px; }
+      .home-header { padding-bottom: 12px; }
+      .home-main { padding-top: 22px; gap: 28px; }
+      .hero-copy h2 { margin: 19px 0 14px; font-size: 42px; letter-spacing: -1.8px; }
+      .hero-copy p { font-size: 13px; }
+      .ledger-strip { gap: 8px; margin-top: 22px; }
+      .ledger-strip>div { flex: 1; min-width: calc(33.33% - 8px); padding: 12px 10px; font-size: 10px; }
+      .ledger-strip b { font-size: 18px; }
+      .login-card { padding: 21px; border-radius: 19px; }
+      .customer-portal { padding: 20px 15px; }
+      .customer-actions { flex-direction: column; }
+      .customer-btn { width: 100%; }
+      .chat-toggle { right: 17px; bottom: 17px; width: 55px; height: 55px; }
+      .chat-window { right: 16px; bottom: 84px; }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      *,*:before,*:after {
+        animation-duration: .01ms!important;
+        animation-iteration-count: 1!important;
+        transition-duration: .01ms!important;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-  <div class="home-wrap">
-    <header class="home-header">
-      <span class="tag">IMS</span>
-      <h1>{{ store_name }}</h1>
-    </header>
+<div class="home-wrap">
 
-    <main class="home-main">
-      <section class="hero-copy">
-        <span class="eyebrow">Stockroom to storefront</span>
-        <h2>One ledger for every <em>product, sale,</em> and shift.</h2>
-        <p>
-          Admins manage the catalog and staff. Employees ring up sales and send
-          receipts instantly. Customers get answers day or night from the chat
-          in the corner.
-        </p>
-        <div class="ledger-strip">
-          <div><b>24/7</b>Customer chat</div>
-          <div><b>QR</b>Receipts</div>
-          <div><b>Auto</b>Email delivery</div>
-        </div>
-      </section>
+  <header class="home-header">
+    <span class="tag">IMS</span>
+    <h1>{{ store_name }}</h1>
+  </header>
 
-      <section class="login-card">
-        <div class="login-tabs">
-          <button id="tab-admin" class="active" onclick="switchTab('admin')" type="button">Admin</button>
-          <button id="tab-employee" onclick="switchTab('employee')" type="button">Employee</button>
+  <main class="home-main">
+
+    <section class="hero-copy">
+      <span class="eyebrow">Stockroom to storefront</span>
+
+      <h2>One ledger for every <em>product, sale,</em> and shift.</h2>
+
+      <p>
+        Admins manage the catalog and staff. Employees ring up sales and send
+        receipts instantly. Customers can access their purchase history,
+        rewards and account through our customer portal.
+      </p>
+
+      <div class="ledger-strip">
+        <div><b>24/7</b>Customer chat</div>
+        <div><b>QR</b>Receipts</div>
+        <div><b>Auto</b>Email delivery</div>
+      </div>
+    </section>
+
+    <section class="login-card">
+
+      <div class="login-tabs">
+        <button id="tab-admin" class="active"
+                onclick="switchTab('admin')" type="button">
+          Admin
+        </button>
+
+        <button id="tab-employee"
+                onclick="switchTab('employee')" type="button">
+          Employee
+        </button>
+      </div>
+
+      <form id="login-form" class="login-form">
+
+        <div>
+          <label for="username">Username</label>
+          <input id="username" type="text"
+                 required autocomplete="username">
         </div>
-        <form id="login-form" class="login-form">
-          <div>
-            <label for="username">Username</label>
-            <input id="username" type="text" required autocomplete="username">
-          </div>
-          <div>
-            <label for="password">Password</label>
-            <input id="password" type="password" required autocomplete="current-password">
-          </div>
-          <div id="login-error" class="login-error"></div>
-          <button type="submit" class="btn-primary">Sign in</button>
-        </form>
-        <p class="login-hint">Both roles sign in here — you'll land on the right dashboard automatically.</p>
-      </section>
-    </main>
+
+        <div>
+          <label for="password">Password</label>
+          <input id="password" type="password"
+                 required autocomplete="current-password">
+        </div>
+
+        <div id="login-error" class="login-error"></div>
+
+        <button type="submit" class="btn-primary">
+          Sign in
+        </button>
+
+      </form>
+
+      <p class="login-hint">
+        Admin and employees sign in here and access their respective dashboards.
+      </p>
+
+    </section>
+
+  </main>
+
+  <!-- CUSTOMER PORTAL -->
+  <section class="customer-portal">
+
+    <h3>Welcome to our Customer Portal</h3>
+
+    <p>
+      Access your purchase history, check your loyalty points,
+      manage your profile and share product reviews.
+    </p>
+
+    <div class="customer-actions">
+
+      <a href="/customer/login" class="customer-btn login">
+        Customer Login
+      </a>
+
+      <a href="/customer/register" class="customer-btn register">
+        Create Customer Account
+      </a>
+
+    </div>
+
+  </section>
+
+</div>
+
+<!-- CUSTOMER CHATBOT -->
+
+<button class="chat-toggle"
+        onclick="toggleChat()"
+        aria-label="Open chat">
+  💬
+</button>
+
+<div class="chat-window" id="chat-window">
+
+  <div class="chat-header">
+    <span><span class="dot"></span>Store Assistant</span>
+
+    <button onclick="toggleChat()"
+            style="background:none;color:inherit;font-size:16px;"
+            aria-label="Close chat">
+      ✕
+    </button>
   </div>
 
-  <!-- Customer chat widget -->
-  <button class="chat-toggle" onclick="toggleChat()" aria-label="Open chat">💬</button>
-  <div class="chat-window" id="chat-window">
-    <div class="chat-header">
-      <span><span class="dot"></span>Store Assistant</span>
-      <button onclick="toggleChat()" style="background:none;color:inherit;font-size:16px;" aria-label="Close chat">✕</button>
-    </div>
-    <div class="chat-body" id="chat-body"></div>
-    <div class="chat-quick">
-      <button onclick="sendChat('What are today\'s offers?')" type="button">Today's offers</button>
-      <button onclick="sendChat('What are your timings?')" type="button">Timings</button>
-      <button onclick="sendChat('Is it in stock?')" type="button">Check stock</button>
-    </div>
-    <div class="chat-input-row">
-      <input id="chat-input" type="text" placeholder="Type a message...">
-      <button onclick="sendChat()" type="button">Send</button>
-    </div>
+  <div class="chat-body" id="chat-body"></div>
+
+  <div class="chat-quick">
+    <button onclick="sendChat('What are today\'s offers?')" type="button">
+      Today's offers
+    </button>
+
+    <button onclick="sendChat('What are your timings?')" type="button">
+      Timings
+    </button>
+
+    <button onclick="sendChat('Is it in stock?')" type="button">
+      Check stock
+    </button>
   </div>
 
-  <script src="/static/js/auth.js"></script>
-  <script src="/static/js/home.js"></script>
+  <div class="chat-input-row">
+    <input id="chat-input" type="text"
+           placeholder="Type a message...">
+
+    <button onclick="sendChat()" type="button">
+      Send
+    </button>
+  </div>
+
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script src="/static/js/home.js"></script>
+
 </body>
 </html>
