@@ -228,12 +228,19 @@ def register_customer(
         # Add a resend-verification route for failed delivery.
         pass
 
-    return CustomerRegistrationOut(
-        message="Registration completed. Email verification is pending.",
-        customer_id=customer.id,
-        email=customer.email,
-        mobile_number=customer.mobile_number
-    )
+    
+return CustomerRegistrationOut(
+    id=customer.id,
+    name=customer.name,
+    email=customer.email,
+    mobile_number=customer.mobile_number,
+    email_verified=customer.email_verified,
+    mobile_verified=customer.mobile_verified,
+    is_active=customer.is_active,
+    created_at=customer.created_at,
+    message="Registration completed. Email verification is pending."
+)
+
 
 
 # --------------------------------------------------
