@@ -750,7 +750,7 @@ async function loadPurchaseHistory() {
                 createElement(
                     "p",
                     "",
-                    formatDate(bill.created_at)
+                    formatDate(bill.date)
                 )
             );
 
