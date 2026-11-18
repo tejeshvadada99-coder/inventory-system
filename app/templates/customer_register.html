@@ -7,7 +7,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#101827">
-
     <title>Create Account | Retail Store</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,11 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             min-height: 100vh;
@@ -39,8 +34,8 @@
             width: 100%;
             max-width: 1050px;
             display: grid;
-            grid-template-columns: 0.9fr 1.1fr;
-            background: rgba(17, 27, 46, 0.94);
+            grid-template-columns: .9fr 1.1fr;
+            background: rgba(17,27,46,.94);
             border: 1px solid rgba(148,163,184,.15);
             border-radius: 24px;
             overflow: hidden;
@@ -49,22 +44,13 @@
         }
 
         @keyframes appear {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
-        /* LEFT PANEL */
 
         .welcome-panel {
             padding: 55px 42px;
-            background:
-                linear-gradient(145deg, rgba(37,99,235,.95), rgba(91,33,182,.95));
+            background: linear-gradient(145deg, rgba(37,99,235,.95), rgba(91,33,182,.95));
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -72,8 +58,7 @@
             overflow: hidden;
         }
 
-        .welcome-panel::before,
-        .welcome-panel::after {
+        .welcome-panel::before, .welcome-panel::after {
             content: "";
             position: absolute;
             border: 1px solid rgba(255,255,255,.12);
@@ -81,48 +66,37 @@
         }
 
         .welcome-panel::before {
-            width: 300px;
-            height: 300px;
-            right: -150px;
-            top: -100px;
+            width: 300px; height: 300px;
+            right: -150px; top: -100px;
         }
 
         .welcome-panel::after {
-            width: 220px;
-            height: 220px;
-            left: -120px;
-            bottom: -80px;
+            width: 220px; height: 220px;
+            left: -120px; bottom: -80px;
         }
 
         .brand {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 19px;
-            font-weight: 800;
+            position: relative; z-index: 1;
+            display: flex; align-items: center; gap: 12px;
+            font-size: 19px; font-weight: 800;
         }
 
         .brand-icon {
-            width: 42px;
-            height: 42px;
+            width: 42px; height: 42px;
             background: rgba(255,255,255,.18);
             border: 1px solid rgba(255,255,255,.25);
             border-radius: 12px;
-            display: grid;
-            place-items: center;
+            display: grid; place-items: center;
             font-size: 22px;
         }
 
         .welcome-content {
-            position: relative;
-            z-index: 1;
+            position: relative; z-index: 1;
             margin: 65px 0;
         }
 
         .welcome-content h1 {
-            font-size: clamp(30px, 4vw, 42px);
+            font-size: clamp(30px,4vw,42px);
             line-height: 1.2;
             margin-bottom: 18px;
             font-weight: 800;
@@ -135,39 +109,28 @@
         }
 
         .benefits {
-            position: relative;
-            z-index: 1;
-            display: grid;
-            gap: 18px;
+            position: relative; z-index: 1;
+            display: grid; gap: 18px;
         }
 
         .benefit {
-            display: flex;
-            gap: 13px;
+            display: flex; gap: 13px;
             align-items: center;
             color: rgba(255,255,255,.92);
             font-size: 13px;
         }
 
         .benefit-icon {
-            width: 35px;
-            height: 35px;
+            width: 35px; height: 35px;
             border-radius: 10px;
-            display: grid;
-            place-items: center;
+            display: grid; place-items: center;
             background: rgba(255,255,255,.16);
             font-size: 16px;
         }
 
-        /* FORM PANEL */
+        .form-panel { padding: 48px 50px; }
 
-        .form-panel {
-            padding: 48px 50px;
-        }
-
-        .form-heading {
-            margin-bottom: 30px;
-        }
+        .form-heading { margin-bottom: 30px; }
 
         .form-heading h2 {
             font-size: 28px;
@@ -181,9 +144,7 @@
             line-height: 1.6;
         }
 
-        .form-group {
-            margin-bottom: 18px;
-        }
+        .form-group { margin-bottom: 18px; }
 
         .form-group label {
             display: block;
@@ -193,13 +154,10 @@
             color: #cbd5e1;
         }
 
-        .input-wrapper {
-            position: relative;
-        }
+        .input-wrapper { position: relative; }
 
         .input-wrapper input {
-            width: 100%;
-            height: 48px;
+            width: 100%; height: 48px;
             padding: 0 15px;
             background: #0b1425;
             border: 1px solid #29364b;
@@ -211,35 +169,26 @@
             transition: .25s;
         }
 
-        .input-wrapper input::placeholder {
-            color: #64748b;
-        }
+        .input-wrapper input::placeholder { color: #64748b; }
 
         .input-wrapper input:focus {
             border-color: #638cff;
             box-shadow: 0 0 0 3px rgba(99,140,255,.12);
         }
 
-        .password-input {
-            padding-right: 65px !important;
-        }
+        .password-input { padding-right: 65px !important; }
 
         .toggle-password {
             position: absolute;
-            right: 13px;
-            top: 50%;
+            right: 13px; top: 50%;
             transform: translateY(-50%);
-            border: none;
-            background: transparent;
+            border: none; background: transparent;
             color: #93a4bd;
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 11px; font-weight: 600;
             cursor: pointer;
         }
 
-        .toggle-password:hover {
-            color: #fff;
-        }
+        .toggle-password:hover { color: #fff; }
 
         .form-row {
             display: grid;
@@ -255,8 +204,7 @@
         }
 
         .terms {
-            display: flex;
-            gap: 9px;
+            display: flex; gap: 9px;
             align-items: flex-start;
             color: #94a3b8;
             font-size: 11px;
@@ -264,25 +212,19 @@
             margin: 20px 0;
         }
 
-        .terms input {
-            margin-top: 3px;
-            accent-color: #638cff;
-        }
+        .terms input { margin-top: 3px; accent-color: #638cff; }
 
-        .terms a {
+        .terms a, .login-link a {
             color: #8eacff;
             text-decoration: none;
         }
 
         .submit-btn {
-            width: 100%;
-            height: 49px;
-            border: none;
-            border-radius: 10px;
-            background: linear-gradient(100deg, #3976ed, #7354e8);
+            width: 100%; height: 49px;
+            border: none; border-radius: 10px;
+            background: linear-gradient(100deg,#3976ed,#7354e8);
             color: white;
-            font-size: 13px;
-            font-weight: 700;
+            font-size: 13px; font-weight: 700;
             font-family: inherit;
             cursor: pointer;
             transition: .25s;
@@ -295,8 +237,7 @@
         }
 
         .submit-btn:disabled {
-            opacity: .65;
-            cursor: not-allowed;
+            opacity: .65; cursor: not-allowed;
             transform: none;
         }
 
@@ -307,19 +248,10 @@
             color: #94a3b8;
         }
 
-        .login-link a {
-            color: #8eacff;
-            text-decoration: none;
-            font-weight: 700;
-        }
-
-        .login-link a:hover {
-            text-decoration: underline;
-        }
+        .login-link a { font-weight: 700; }
 
         .verification-note {
-            margin-top: 20px;
-            padding: 13px;
+            margin-top: 20px; padding: 13px;
             border: 1px solid rgba(96,165,250,.2);
             border-radius: 10px;
             background: rgba(37,99,235,.08);
@@ -338,15 +270,13 @@
         }
 
         .message.error {
-            display: block;
-            color: #fca5a5;
+            display: block; color: #fca5a5;
             background: rgba(220,38,38,.12);
             border: 1px solid rgba(248,113,113,.2);
         }
 
         .message.success {
-            display: block;
-            color: #86efac;
+            display: block; color: #86efac;
             background: rgba(22,163,74,.12);
             border: 1px solid rgba(74,222,128,.2);
         }
@@ -358,91 +288,40 @@
             font-size: 10px;
         }
 
-        @media (max-width: 800px) {
-            .container {
-                max-width: 550px;
-                grid-template-columns: 1fr;
-            }
-
-            .welcome-panel {
-                padding: 30px;
-            }
-
-            .welcome-content {
-                margin: 35px 0 25px;
-            }
-
-            .welcome-content h1 {
-                font-size: 30px;
-            }
-
-            .benefits {
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-            }
-
-            .form-panel {
-                padding: 35px 30px;
-            }
+        @media (max-width:800px) {
+            .container { max-width:550px; grid-template-columns:1fr; }
+            .welcome-panel { padding:30px; }
+            .welcome-content { margin:35px 0 25px; }
+            .welcome-content h1 { font-size:30px; }
+            .benefits { grid-template-columns:1fr 1fr; gap:12px; }
+            .form-panel { padding:35px 30px; }
         }
 
-        @media (max-width: 480px) {
-            body {
-                padding: 15px 10px;
-                align-items: flex-start;
-            }
-
-            .container {
-                border-radius: 17px;
-            }
-
-            .welcome-panel {
-                padding: 25px 22px;
-            }
-
-            .welcome-content {
-                margin: 30px 0 20px;
-            }
-
-            .welcome-content h1 {
-                font-size: 27px;
-            }
-
-            .benefits {
-                grid-template-columns: 1fr;
-            }
-
-            .form-panel {
-                padding: 30px 22px;
-            }
-
-            .form-heading h2 {
-                font-size: 24px;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-                gap: 0;
-            }
+        @media (max-width:480px) {
+            body { padding:15px 10px; align-items:flex-start; }
+            .container { border-radius:17px; }
+            .welcome-panel { padding:25px 22px; }
+            .welcome-content { margin:30px 0 20px; }
+            .welcome-content h1 { font-size:27px; }
+            .benefits { grid-template-columns:1fr; }
+            .form-panel { padding:30px 22px; }
+            .form-heading h2 { font-size:24px; }
+            .form-row { grid-template-columns:1fr; gap:0; }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: .01ms !important;
-                transition-duration: .01ms !important;
+        @media (prefers-reduced-motion:reduce) {
+            *,*::before,*::after {
+                animation-duration:.01ms !important;
+                transition-duration:.01ms !important;
             }
         }
     </style>
 </head>
 
 <body>
-
 <div class="container">
 
-    <!-- WELCOME PANEL -->
-
     <section class="welcome-panel">
-
         <div class="brand">
             <div class="brand-icon">✦</div>
             <span>{{ store_name | default('RETAIL STORE') }}</span>
@@ -450,7 +329,6 @@
 
         <div class="welcome-content">
             <h1>Shopping rewards start here.</h1>
-
             <p>
                 Create your customer account and keep your purchase
                 history, loyalty rewards and account information
@@ -459,112 +337,69 @@
         </div>
 
         <div class="benefits">
-
             <div class="benefit">
                 <div class="benefit-icon">★</div>
                 <span>Earn 1 reward point for every ₹100 spent.</span>
             </div>
-
             <div class="benefit">
                 <div class="benefit-icon">▤</div>
                 <span>Access your purchase history anytime.</span>
             </div>
-
             <div class="benefit">
                 <div class="benefit-icon">♧</div>
                 <span>Keep your customer profile updated.</span>
             </div>
-
         </div>
-
     </section>
 
-
-    <!-- REGISTRATION FORM -->
-
     <section class="form-panel">
-
         <div class="form-heading">
             <h2>Create your account</h2>
             <p>Enter your details to register as a customer.</p>
         </div>
 
-        <div id="formMessage" class="message" role="alert"></div>
+        <div id="formMessage" class="message" role="alert" aria-live="polite"></div>
 
-        <form id="registerForm" method="POST" action="/auth/customer/register">
-
+        <form id="registerForm">
             <div class="form-group">
                 <label for="name">Full name</label>
                 <div class="input-wrapper">
-                    <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        placeholder="Enter your full name"
-                        maxlength="120"
-                        autocomplete="name"
-                        required
-                    >
+                    <input type="text" id="name" name="name"
+                           placeholder="Enter your full name"
+                           maxlength="120" autocomplete="name" required>
                 </div>
             </div>
 
             <div class="form-row">
-
                 <div class="form-group">
                     <label for="mobile_number">Mobile number</label>
                     <div class="input-wrapper">
-                        <input
-                            type="tel"
-                            id="mobile_number"
-                            name="mobile_number"
-                            placeholder="10-digit mobile"
-                            maxlength="20"
-                            autocomplete="tel"
-                            required
-                        >
+                        <input type="tel" id="mobile_number" name="mobile_number"
+                               placeholder="10-digit mobile" maxlength="20"
+                               autocomplete="tel" required>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="email">Email address</label>
                     <div class="input-wrapper">
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            placeholder="name@example.com"
-                            maxlength="120"
-                            autocomplete="email"
-                            required
-                        >
+                        <input type="email" id="email" name="email"
+                               placeholder="name@example.com" maxlength="120"
+                               autocomplete="email" required>
                     </div>
                 </div>
-
             </div>
 
             <div class="form-group">
                 <label for="password">Password</label>
-
                 <div class="input-wrapper">
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        class="password-input"
-                        placeholder="Create a strong password"
-                        autocomplete="new-password"
-                        required
-                    >
-
-                    <button
-                        type="button"
-                        class="toggle-password"
-                        data-target="password"
-                    >
-                        Show
-                    </button>
+                    <input type="password" id="password" name="password"
+                           class="password-input"
+                           placeholder="Create a strong password"
+                           autocomplete="new-password" required>
+                    <button type="button" class="toggle-password"
+                            data-target="password">Show</button>
                 </div>
-
                 <p class="password-hint">
                     Use a strong password. Avoid using personal information.
                 </p>
@@ -572,25 +407,13 @@
 
             <div class="form-group">
                 <label for="confirm_password">Confirm password</label>
-
                 <div class="input-wrapper">
-                    <input
-                        type="password"
-                        id="confirm_password"
-                        name="confirm_password"
-                        class="password-input"
-                        placeholder="Enter your password again"
-                        autocomplete="new-password"
-                        required
-                    >
-
-                    <button
-                        type="button"
-                        class="toggle-password"
-                        data-target="confirm_password"
-                    >
-                        Show
-                    </button>
+                    <input type="password" id="confirm_password"
+                           name="confirm_password" class="password-input"
+                           placeholder="Enter your password again"
+                           autocomplete="new-password" required>
+                    <button type="button" class="toggle-password"
+                            data-target="confirm_password">Show</button>
                 </div>
             </div>
 
@@ -608,13 +431,12 @@
             <button type="submit" class="submit-btn" id="submitBtn">
                 Create Account →
             </button>
-
         </form>
 
         <div class="verification-note">
             <strong>Account verification</strong><br>
-            Email and mobile verification may be required before
-            your account can be used to log in.
+            Email verification is currently required before login.
+            Mobile verification requires an SMS provider integration.
         </div>
 
         <div class="login-link">
@@ -627,30 +449,21 @@
             {{ store_name | default('Retail Store') }}.
             All rights reserved.
         </div>
-
     </section>
-
 </div>
 
-
 <script>
-    // Password visibility toggle
-
+    // Password visibility
     document.querySelectorAll(".toggle-password").forEach(button => {
         button.addEventListener("click", () => {
             const input = document.getElementById(button.dataset.target);
-
             if (!input) return;
 
-            const isPassword = input.type === "password";
-
-            input.type = isPassword ? "text" : "password";
-            button.textContent = isPassword ? "Hide" : "Show";
+            const show = input.type === "password";
+            input.type = show ? "text" : "password";
+            button.textContent = show ? "Hide" : "Show";
         });
     });
-
-
-    // Registration form validation
 
     const registerForm = document.getElementById("registerForm");
     const messageBox = document.getElementById("formMessage");
@@ -661,51 +474,81 @@
         messageBox.className = "message " + type;
     }
 
-    registerForm.addEventListener("submit", function(event) {
+    registerForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        if (!registerForm.reportValidity()) return;
 
         const name = document.getElementById("name").value.trim();
         const mobile = document.getElementById("mobile_number").value.trim();
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value;
-        const confirmPassword =
-            document.getElementById("confirm_password").value;
-
-        if (!name || !mobile || !email || !password || !confirmPassword) {
-            event.preventDefault();
-            showMessage("Please complete all required fields.", "error");
-            return;
-        }
+        const confirmPassword = document.getElementById("confirm_password").value;
 
         if (!/^[6-9]\d{9}$/.test(mobile)) {
-            event.preventDefault();
             showMessage("Enter a valid 10-digit Indian mobile number.", "error");
             return;
         }
 
         if (password !== confirmPassword) {
-            event.preventDefault();
             showMessage("Passwords do not match.", "error");
             return;
         }
 
         if (new TextEncoder().encode(password).length > 72) {
-            event.preventDefault();
-            showMessage("Password is too long. Please use at most 72 UTF-8 bytes.", "error");
+            showMessage("Password is too long. Use at most 72 UTF-8 bytes.", "error");
             return;
         }
 
-        if (!document.getElementById("terms").checked) {
-            event.preventDefault();
-            showMessage("Please accept the terms to continue.", "error");
-            return;
-        }
-
-        // The backend must repeat all validation.
-        // This form submits to the registration endpoint.
         submitBtn.disabled = true;
         submitBtn.textContent = "Creating account...";
+
+        try {
+            const response = await fetch("/auth/customer/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    name: name,
+                    mobile_number: mobile,
+                    email: email,
+                    password: password,
+                    confirm_password: confirmPassword
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                let errorMessage = data.detail || "Registration failed.";
+
+                if (Array.isArray(errorMessage)) {
+                    errorMessage = errorMessage.map(item => item.msg).join(", ");
+                }
+
+                showMessage(errorMessage, "error");
+                return;
+            }
+
+            showMessage(
+                data.message || "Registration successful. Check your email for verification.",
+                "success"
+            );
+
+            registerForm.reset();
+
+        } catch (error) {
+            showMessage(
+                "Unable to connect to the server. Please try again.",
+                "error"
+            );
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Create Account →";
+        }
     });
 </script>
-<script src="{{ url_for('static', path='js/customer.js') }}"></script>
 </body>
 </html>
