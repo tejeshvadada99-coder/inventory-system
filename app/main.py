@@ -9,14 +9,22 @@ from app.database import init_db, SessionLocal
 from app.models import User, RoleEnum
 from app.auth import hash_password
 from app.config import settings
-from app.routers import auth_routes, admin, employee, chatbot_routes, customer_auth, customers, reviews, loyalty
+from app.routers import (
+    auth_routes,
+    admin,
+    employee,
+    chatbot_routes,
+    customer_auth,
+    customers,
+    reviews,
+    loyalty,
+)
 
-
-# 1. Initialize database tables
+# 1. Initialize database
 init_db()
 
 
-# 2. Seed the first admin account if none exists yet
+# 2. Seed first admin
 def seed_first_admin():
     db = SessionLocal()
 
@@ -41,11 +49,7 @@ def seed_first_admin():
             )
 
             db.commit()
-
-            print(
-                f"[startup] Created first admin account: "
-                f"{settings.FIRST_ADMIN_USERNAME}"
-            )
+            print("[startup] First admin account created")
 
     finally:
         db.close()
@@ -54,13 +58,11 @@ def seed_first_admin():
 seed_first_admin()
 
 
-# 3. Create FastAPI application
-app = FastAPI(
-    title="Inventory Management System"
-)
+# 3. Create application
+app = FastAPI(title="Inventory Management System")
 
 
-# 4. Configure CORS
+# 4. CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -80,15 +82,13 @@ app.include_router(reviews.router)
 app.include_router(loyalty.router)
 
 
-# 6. Configure static files and HTML templates
+# 6. Static files and templates
 BASE_DIR = os.path.dirname(__file__)
 
 app.mount(
     "/static",
-    StaticFiles(
-        directory=os.path.join(BASE_DIR, "static")
-    ),
-    name="static"
+    StaticFiles(directory=os.path.join(BASE_DIR, "static")),
+    name="static",
 )
 
 templates = Jinja2Templates(
@@ -102,25 +102,55 @@ def homepage(request: Request):
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"store_name": settings.STORE_NAME}
+        {"store_name": settings.STORE_NAME},
     )
 
 
-# 8. Admin dashboard
+# 8. Customer registration page
+@app.get("/customer/register")
+def customer_register_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "customer_register.html",
+        {"store_name": settings.STORE_NAME},
+    )
+
+
+# 9. Customer login page
+@app.get("/customer/login")
+def customer_login_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "customer_login.html",
+        {"store_name": settings.STORE_NAME},
+    )
+
+
+# 10. Customer dashboard page
+@app.get("/customer/dashboard")
+def customer_dashboard_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "customer_dashboard.html",
+        {"store_name": settings.STORE_NAME},
+    )
+
+
+# 11. Admin dashboard
 @app.get("/admin/dashboard")
 def admin_dashboard(request: Request):
     return templates.TemplateResponse(
         request,
         "admin_dashboard.html",
-        {}
+        {},
     )
 
 
-# 9. Employee dashboard
+# 12. Employee dashboard
 @app.get("/employee/dashboard")
 def employee_dashboard(request: Request):
     return templates.TemplateResponse(
         request,
         "employee_dashboard.html",
-        {}
+        {},
     )
