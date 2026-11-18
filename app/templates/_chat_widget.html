@@ -1,0 +1,20 @@
+<!--
+  _chat_widget.html
+  -----------------
+  The floating chat bubble + window. Included by index.html (guests) and
+  customer_dashboard.html (signed-in customers) using a Jinja include, so the
+  markup exists in one place. Behaviour is in static/js/chat.js.
+-->
+<button class="chat-toggle" onclick="toggleChat()" aria-label="Open chat" type="button">💬</button>
+<div class="chat-window" id="chat-window">
+  <div class="chat-header">
+    <span><span class="dot"></span><span id="chat-title">Store Assistant</span></span>
+    <button onclick="toggleChat()" aria-label="Close chat" type="button">✕</button>
+  </div>
+  <div class="chat-body" id="chat-body"></div>
+  <div class="chat-quick" id="chat-quick"></div>
+  <div class="chat-input-row">
+    <input id="chat-input" type="text" placeholder="Type a message...">
+    <button onclick="sendChat()" type="button">Send</button>
+  </div>
+</div>
